@@ -86,20 +86,23 @@ describe("API client advanced behavior", () => {
   it.each([
     [400, "bad request"],
     [401, "unauthorized"],
-  ])("maps non-retryable HTTP status %s to an error with its status", async (status, detail) => {
-    mockFetch.mockResolvedValueOnce(jsonResponse(status, { detail }));
+  ])(
+    "maps non-retryable HTTP status %s to an error with its status",
+    async (status, detail) => {
+      mockFetch.mockResolvedValueOnce(jsonResponse(status, { detail }));
 
-    const { getHealth } = await import("@/lib/api");
+      const { getHealth } = await import("@/lib/api");
 
-    try {
-      await getHealth();
-      expect.fail("getHealth should reject");
-    } catch (error) {
-      expect(error).toBeInstanceOf(Error);
-      expect(error).toMatchObject({ message: detail, status });
-    }
-    expect(mockFetch).toHaveBeenCalledTimes(1);
-  });
+      try {
+        await getHealth();
+        expect.fail("getHealth should reject");
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+        expect(error).toMatchObject({ message: detail, status });
+      }
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it("preserves a server error after transient retries are exhausted", async () => {
     vi.useFakeTimers();
@@ -158,11 +161,19 @@ describe("API client advanced behavior", () => {
 
   it("forwards AbortController cancellation to the copilot fetch", async () => {
     const controller = new AbortController();
-    const abortError = new DOMException("The operation was aborted.", "AbortError");
+    const abortError = new DOMException(
+      "The operation was aborted.",
+      "AbortError",
+    );
     mockFetch.mockRejectedValueOnce(abortError);
 
     const { askCopilot } = await import("@/lib/api");
-    const iterator = askCopilot("test", "dashboard", undefined, controller.signal);
+    const iterator = askCopilot(
+      "test",
+      "dashboard",
+      undefined,
+      controller.signal,
+    );
     const request = iterator.next();
 
     await expect(request).rejects.toMatchObject({ name: "AbortError" });
@@ -182,7 +193,7 @@ describe("API client advanced behavior", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       "/api/v1/pipeline/runs?offset=20&limit=10",
-      expect.objectContaining({ method: undefined }),
+      expect.objectContaining({ headers: expect.any(Object) }),
     );
   });
 
